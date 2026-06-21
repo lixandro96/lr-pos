@@ -1,18 +1,30 @@
 import { Outlet } from "react-router-dom";
+
 import AppHeader from "../components/navigation/AppHeader";
 import BottomNavigation from "../components/navigation/BottomNavigation";
+import DesktopSidebar from "../components/navigation/DesktopSidebar";
+import DesktopTopbar from "../components/navigation/DesktopTopbar";
 
 function MainLayout() {
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      <AppHeader />
+    <div className="min-h-dvh bg-gray-50 lg:pl-64">
+      <DesktopSidebar />
 
-      <main className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))]
-        md:pb-0">
-        <Outlet />
-      </main>
+      <div className="flex min-h-dvh flex-col">
+        <AppHeader />
+        <DesktopTopbar />`
+        <main
+          className="
+            flex-1
+            pb-[calc(5rem+env(safe-area-inset-bottom))]
+            lg:pb-0
+          "
+        >
+          <Outlet />
+        </main>
 
-      <BottomNavigation />
+        <BottomNavigation />
+      </div>
     </div>
   );
 }
