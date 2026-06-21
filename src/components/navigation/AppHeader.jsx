@@ -1,9 +1,17 @@
 function AppHeader() {
   return (
-    <header className="bg-white border-b px-4 py-3">
-      <h1 className="text-lg font-semibold">
-        LR POS
-      </h1>
+    <header
+      className="
+        sticky top-0 z-40
+        border-b border-gray-200
+        bg-white
+      "
+    >
+      <div className="flex h-16 items-center px-4 md:px-6">
+        <h1 className="text-lg font-semibold text-[#6F4E37]">
+          LR POS
+        </h1>
+      </div>
     </header>
   );
 }

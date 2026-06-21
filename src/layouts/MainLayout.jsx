@@ -7,7 +7,8 @@ function MainLayout() {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <AppHeader />
 
-      <main className="flex-1">
+      <main className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))]
+        md:pb-0">
         <Outlet />
       </main>
 
