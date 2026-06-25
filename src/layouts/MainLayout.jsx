@@ -1,9 +1,9 @@
 import { Outlet } from "react-router-dom";
 
-import AppHeader from "../components/navigation/AppHeader";
-import BottomNavigation from "../components/navigation/BottomNavigation";
-import DesktopSidebar from "../components/navigation/DesktopSidebar";
-import DesktopTopbar from "../components/navigation/DesktopTopbar";
+import AppHeader from "../components/layout/AppHeader";
+import BottomNavigation from "../components/layout/BottomNavigation";
+import DesktopSidebar from "../components/layout/DesktopSidebar";
+import DesktopTopbar from "../components/layout/DesktopTopbar";
 
 function MainLayout() {
   return (

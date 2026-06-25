@@ -9,9 +9,9 @@ function AppHeader() {
       "
     >
       <div className="flex h-16 items-center px-4">
-        <h1 className="text-lg font-semibold text-[#6F4E37]">
+        <p className="text-lg font-semibold text-[#6F4E37]">
           LR POS
-        </h1>
+        </p>
       </div>
     </header>
   );
