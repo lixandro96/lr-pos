@@ -1,14 +1,29 @@
 import { useState } from "react";
 
 import PageHeader from "../../components/layout/PageHeader";
-import Toast from "../../components/ui/Toast";
-import { mockProducts } from "../../mocks";
-
-import ProductCard from "./components/ProductCard";
-import ProductOptionsSheet from "./components/ProductOptionsSheet";
-import OrderCart from "./components/OrderCart";
 import BottomSheet from "../../components/ui/BottomSheet";
+import Button from "../../components/ui/Button";
+import EmptyState from "../../components/ui/EmptyState";
+import Toast from "../../components/ui/Toast";
 
+import {
+  mockCategories,
+  mockProducts,
+} from "../../mocks";
+
+import OrderCart from "./components/OrderCart";
+import ProductCard from "./components/ProductCard";
+import ProductCatalogFilters from "./components/ProductCatalogFilters";
+import ProductOptionsSheet from "./components/ProductOptionsSheet";
+
+
+function normalizeText(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
 
 function createCartItemKey(item) {
   const normalizedNotes = String(item.notes ?? "")
@@ -27,6 +42,8 @@ const currencyFormatter = new Intl.NumberFormat("es-DO", {
 });
 
 function OrdersPage() {
+
+
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -36,9 +53,94 @@ function OrdersPage() {
     message: "",
   });
 
-  const activeProducts = mockProducts.filter(
-    (product) => product.isActive,
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] =
+  useState("ALL")
+
+  const activeCategories = [...mockCategories]
+  .filter((category) => category.isActive)
+  .sort((firstCategory, secondCategory) => {
+    const sortDifference =
+      firstCategory.sortOrder -
+      secondCategory.sortOrder;
+
+    if (sortDifference !== 0) {
+      return sortDifference;
+    }
+
+    return firstCategory.name.localeCompare(
+      secondCategory.name,
+      "es",
+    );
+  });
+
+  const categoryOrderById = new Map(
+    activeCategories.map((category) => [
+      category.id,
+      category.sortOrder,
+    ]),
   );
+
+  const normalizedSearchTerm =
+  normalizeText(searchTerm);
+
+  const filteredProducts = mockProducts
+    .filter((product) => product.isActive)
+    .filter((product) => {
+      if (selectedCategoryId === "ALL") {
+        return true;
+      }
+
+      return product.categoryId === selectedCategoryId;
+    })
+    .filter((product) => {
+      if (!normalizedSearchTerm) {
+        return true;
+      }
+
+      const searchableContent = normalizeText(
+        `${product.name} ${product.description}`,
+      );
+
+      return searchableContent.includes(
+        normalizedSearchTerm,
+      );
+    })
+    .sort((firstProduct, secondProduct) => {
+      const firstCategoryOrder =
+        categoryOrderById.get(firstProduct.categoryId) ??
+        Number.MAX_SAFE_INTEGER;
+
+      const secondCategoryOrder =
+        categoryOrderById.get(secondProduct.categoryId) ??
+        Number.MAX_SAFE_INTEGER;
+
+      const categoryDifference =
+        firstCategoryOrder - secondCategoryOrder;
+
+      if (categoryDifference !== 0) {
+        return categoryDifference;
+      }
+
+      const productOrderDifference =
+        (firstProduct.sortOrder ??
+          Number.MAX_SAFE_INTEGER) -
+        (secondProduct.sortOrder ??
+          Number.MAX_SAFE_INTEGER);
+
+      if (productOrderDifference !== 0) {
+        return productOrderDifference;
+      }
+
+      return firstProduct.name.localeCompare(
+        secondProduct.name,
+        "es",
+      );
+    });
+
+  const hasActiveFilters =
+    searchTerm.trim() !== "" ||
+    selectedCategoryId !== "ALL";
 
   const cartQuantity = cartItems.reduce(
     (total, item) => total + item.quantity,
@@ -49,6 +151,10 @@ function OrdersPage() {
     (total, item) => total + item.subtotal,
     0,
   );
+  function handleClearCatalogFilters() {
+    setSearchTerm("");
+    setSelectedCategoryId("ALL");
+  }
 
   function handleSelectProduct(product) {
     setSelectedProduct(product);
@@ -187,8 +293,21 @@ function OrdersPage() {
         xl:grid-cols-[minmax(0,1fr)_24rem]
       "
     >
+    
       {/* Catálogo */}
-      <div className="min-w-0">
+    <div className="min-w-0 space-y-5">
+      <ProductCatalogFilters
+        searchTerm={searchTerm}
+        onSearchChange={(event) =>
+          setSearchTerm(event.target.value)
+        }
+        onClearSearch={() => setSearchTerm("")}
+        categories={activeCategories}
+        selectedCategoryId={selectedCategoryId}
+        onCategoryChange={setSelectedCategoryId}
+      />
+
+      {filteredProducts.length > 0 ? (
         <div
           className="
             grid grid-cols-2 gap-3
@@ -198,7 +317,7 @@ function OrdersPage() {
             2xl:grid-cols-4
           "
         >
-          {activeProducts.map((product) => (
+          {filteredProducts.map((product) => (
             <ProductCard
               key={product.id}
               product={product}
@@ -206,7 +325,28 @@ function OrdersPage() {
             />
           ))}
         </div>
-      </div>
+      ) : (
+        <EmptyState
+          title={
+            hasActiveFilters
+              ? "No se encontraron productos"
+              : "No hay productos disponibles"
+          }
+          description={
+            hasActiveFilters
+              ? "Prueba con otro término de búsqueda o selecciona una categoría diferente."
+              : "Los productos activos aparecerán en esta sección."
+          }
+          action={
+            hasActiveFilters ? (
+              <Button onClick={handleClearCatalogFilters}>
+                Limpiar filtros
+              </Button>
+            ) : undefined
+          }
+        />
+      )}
+    </div>
 
       {/* Carrito de escritorio */}
       <aside className="hidden lg:block">
