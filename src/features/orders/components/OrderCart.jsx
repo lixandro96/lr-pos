@@ -1,3 +1,5 @@
+import Button from "../../../components/ui/Button";
+
 const currencyFormatter = new Intl.NumberFormat("es-DO", {
   style: "currency",
   currency: "DOP",
@@ -10,6 +12,7 @@ function OrderCart({
   onIncrease,
   onDecrease,
   onRemove,
+  onContinue,
   embedded = false,
   showHeader = true,
 }) {
@@ -165,8 +168,16 @@ function OrderCart({
           <p className="text-lg font-bold text-[#6F4E37]">
             {currencyFormatter.format(total)}
           </p>
+
+
         </footer>
+
       )}
+        <Button
+          className="w-full"
+          onClick={onContinue}>
+          Continuar
+        </Button>
     </section>
   );
 }

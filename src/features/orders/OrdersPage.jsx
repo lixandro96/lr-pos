@@ -15,6 +15,7 @@ import OrderCart from "./components/OrderCart";
 import ProductCard from "./components/ProductCard";
 import ProductCatalogFilters from "./components/ProductCatalogFilters";
 import ProductOptionsSheet from "./components/ProductOptionsSheet";
+import OrderCheckoutSheet from "./components/OrderCheckoutSheet";
 
 
 function normalizeText(value) {
@@ -56,6 +57,16 @@ function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] =
   useState("ALL")
+
+  const [isCheckoutOpen, setIsCheckoutOpen] =
+  useState(false);
+
+  const [checkoutData, setCheckoutData] = useState({
+    orderType: "",
+    clientId: null,
+    deliveryAddress: "",
+    paymentMethod: "",
+  });
 
   const activeCategories = [...mockCategories]
   .filter((category) => category.isActive)
@@ -151,6 +162,69 @@ function OrdersPage() {
     (total, item) => total + item.subtotal,
     0,
   );
+
+
+  const orderDraft = {
+    items: cartItems.map((item) => ({
+      productId: item.productId,
+      name: item.name,
+      variantId: item.variantId,
+      variantName: item.variantName,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      subtotal: item.subtotal,
+      notes: item.notes,
+    })),
+    totalQuantity: cartQuantity,
+    total: cartTotal,
+    orderType: checkoutData.orderType,
+    clientId: checkoutData.clientId,
+    deliveryAddress: checkoutData.deliveryAddress,
+    paymentMethod: checkoutData.paymentMethod,
+  };
+
+  function handleOpenCheckout() {
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+  }
+
+  function handleCloseCheckout() {
+    setIsCheckoutOpen(false);
+  }
+
+  function handleOrderTypeChange(orderType) {
+    setCheckoutData((currentData) => ({
+      ...currentData,
+      orderType,
+
+      clientId:
+        orderType === "DELIVERY"
+          ? currentData.clientId
+          : null,
+
+      deliveryAddress:
+        orderType === "DELIVERY"
+          ? currentData.deliveryAddress
+          : "",
+    }));
+  }
+
+  function handleContinueCheckout() {
+    console.log("Borrador del pedido:", orderDraft);
+
+    const orderTypeLabel =
+      checkoutData.orderType === "DELIVERY"
+        ? "Delivery"
+        : "Mostrador";
+
+    setToast({
+      isOpen: true,
+      title: "Tipo de pedido seleccionado",
+      message: `El pedido continuará como ${orderTypeLabel}.`,
+    });
+
+    setIsCheckoutOpen(false);
+  }
   function handleClearCatalogFilters() {
     setSearchTerm("");
     setSelectedCategoryId("ALL");
@@ -359,6 +433,7 @@ function OrdersPage() {
               onIncrease={handleIncreaseCartItem}
               onDecrease={handleDecreaseCartItem}
               onRemove={handleRemoveCartItem}
+              onContinue={handleOpenCheckout}
             />
           ) : (
             <div
@@ -431,10 +506,22 @@ function OrdersPage() {
         onIncrease={handleIncreaseCartItem}
         onDecrease={handleDecreaseCartItem}
         onRemove={handleRemoveCartItem}
+        onContinue={handleOpenCheckout}
         embedded
         showHeader={false}
       />
     </BottomSheet>
+                                                      {/* Checkout */}
+    <OrderCheckoutSheet
+      isOpen={isCheckoutOpen}
+      onClose={handleCloseCheckout}
+      orderType={checkoutData.orderType}
+      onOrderTypeChange={handleOrderTypeChange}
+      totalQuantity={cartQuantity}
+      total={cartTotal}
+      onContinue={handleContinueCheckout}
+    />
+
 
     {selectedProduct && (
       <ProductOptionsSheet
