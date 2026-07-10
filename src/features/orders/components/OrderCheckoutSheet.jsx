@@ -1,6 +1,7 @@
 import BottomSheet from "../../../components/ui/BottomSheet";
 import Button from "../../../components/ui/Button";
 import Select from "../../../components/ui/Select";
+import DeliveryDetailsForm from "./DeliveryDetailsForm";
 
 const currencyFormatter = new Intl.NumberFormat("es-DO", {
   style: "currency",
@@ -19,23 +20,41 @@ const orderTypeOptions = [
 ];
 
 function OrderCheckoutSheet({
-  isOpen,
-  onClose,
-  orderType,
-  onOrderTypeChange,
-  totalQuantity,
-  total,
-  onContinue,
+    isOpen,
+    onClose,
+    orderType,
+    onOrderTypeChange,
+    clients,
+    clientId,
+    deliveryAddress,
+    onClientChange,
+    onDeliveryAddressChange,
+    totalQuantity,
+    total,
+    onContinue,
 }) {
+
+
+  const isDeliveryComplete =
+  orderType === "DELIVERY" &&
+  Boolean(clientId) &&
+  deliveryAddress.trim() !== "";
+
+  const canContinue =
+    orderType === "MOSTRADOR" ||
+    isDeliveryComplete;
+
+
   return (
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
       title="Confirmar pedido"
+
       footer={
         <Button
           className="w-full"
-          disabled={!orderType}
+          disabled={!canContinue}
           onClick={onContinue}
         >
           Continuar
@@ -89,19 +108,16 @@ function OrderCheckoutSheet({
             </p>
           </div>
         )}
-
         {orderType === "DELIVERY" && (
-          <div
-            className="
-              rounded-xl border border-blue-200
-              bg-blue-50 p-4
-            "
-          >
-            <p className="text-sm text-blue-800">
-              En el siguiente paso seleccionaremos el cliente y
-              la dirección de entrega.
-            </p>
-          </div>
+          <DeliveryDetailsForm
+            clients={clients}
+            clientId={clientId}
+            deliveryAddress={deliveryAddress}
+            onClientChange={onClientChange}
+            onDeliveryAddressChange={
+              onDeliveryAddressChange
+            }
+          />
         )}
       </div>
     </BottomSheet>
