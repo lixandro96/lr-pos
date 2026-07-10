@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -7,6 +8,8 @@ import {
 
 import { mockOrders } from "../../../mocks";
 import { OrdersContext } from "./orders-context";
+
+const ORDERS_STORAGE_KEY = "lr-pos-orders";
 
 function getHighestOrderNumber(orders) {
   return orders.reduce((highestNumber, order) => {
@@ -54,14 +57,67 @@ function buildCreatedOrder(orderDraft, orderNumber) {
   };
 }
 
+function loadOrdersFromStorage() {
+  if (typeof window === "undefined") {
+    return [...mockOrders];
+  }
+
+  try {
+    const storedOrders = window.localStorage.getItem(
+      ORDERS_STORAGE_KEY,
+    );
+
+    if (!storedOrders) {
+      return [...mockOrders];
+    }
+
+    const parsedOrders = JSON.parse(storedOrders);
+
+    if (!Array.isArray(parsedOrders)) {
+      return [...mockOrders];
+    }
+
+    return parsedOrders;
+  } catch (error) {
+    console.error(
+      "No se pudieron cargar los pedidos desde localStorage:",
+      error,
+    );
+
+    return [...mockOrders];
+  }
+}
+
+function saveOrdersToStorage(orders) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      ORDERS_STORAGE_KEY,
+      JSON.stringify(orders),
+    );
+  } catch (error) {
+    console.error(
+      "No se pudieron guardar los pedidos en localStorage:",
+      error,
+    );
+  }
+}
+
 function OrdersProvider({ children }) {
-  const [orders, setOrders] = useState(() => [
-    ...mockOrders,
-  ]);
+  const [orders, setOrders] = useState(() =>
+    loadOrdersFromStorage(),
+  );
 
   const nextOrderNumberRef = useRef(
-    getHighestOrderNumber(mockOrders) + 1,
+    getHighestOrderNumber(orders) + 1,
   );
+
+  useEffect(() => {
+    saveOrdersToStorage(orders);
+  }, [orders]);
 
   const createOrder = useCallback((orderDraft) => {
     const orderNumber = nextOrderNumberRef.current;
@@ -82,43 +138,50 @@ function OrdersProvider({ children }) {
 
   const updateOrderStatus = useCallback((orderId, status) => {
     setOrders((currentOrders) =>
-        currentOrders.map((order) => {
+      currentOrders.map((order) => {
         if (order.id !== orderId) {
-            return order;
+          return order;
         }
 
         return {
-            ...order,
-            status,
+          ...order,
+          status,
         };
-        }),
+      }),
     );
   }, []);
 
-  const updateOrderPayment = useCallback((orderId, paymentData) => {
-    setOrders((currentOrders) =>
+  const updateOrderPayment = useCallback(
+    (orderId, paymentData) => {
+      setOrders((currentOrders) =>
         currentOrders.map((order) => {
-        if (order.id !== orderId) {
+          if (order.id !== orderId) {
             return order;
-        }
+          }
 
-        return {
+          return {
             ...order,
             ...paymentData,
-        };
+          };
         }),
-    );
-  }, []);
-
+      );
+    },
+    [],
+  );
 
   const value = useMemo(
     () => ({
-        orders,
-        createOrder,
-        updateOrderStatus,
-         updateOrderPayment
+      orders,
+      createOrder,
+      updateOrderStatus,
+      updateOrderPayment,
     }),
-    [orders, createOrder, updateOrderStatus, updateOrderPayment],
+    [
+      orders,
+      createOrder,
+      updateOrderStatus,
+      updateOrderPayment,
+    ],
   );
 
   return (
