@@ -17,6 +17,7 @@ import OrderCheckoutSheet from "./components/OrderCheckoutSheet";
 import ProductCard from "./components/ProductCard";
 import ProductCatalogFilters from "./components/ProductCatalogFilters";
 import ProductOptionsSheet from "./components/ProductOptionsSheet";
+import { useOrders } from "./context/useOrders";
 
 function normalizeText(value) {
   return String(value ?? "")
@@ -44,6 +45,8 @@ const currencyFormatter = new Intl.NumberFormat("es-DO", {
 });
 
 function OrdersPage() {
+
+  const { createOrder } = useOrders();
   const [selectedProduct, setSelectedProduct] =
     useState(null);
 
@@ -441,7 +444,9 @@ function OrdersPage() {
     return;
   }
 
-  console.log("Pedido confirmado:", orderDraft);
+  const confirmedOrder = createOrder(orderDraft);
+
+  console.log("Pedido confirmado:", confirmedOrder);
 
   const orderTypeLabel =
     checkoutData.orderType === "DELIVERY"
@@ -451,7 +456,7 @@ function OrdersPage() {
   setToast({
     isOpen: true,
     title: "Pedido enviado a cocina",
-    message: `El pedido de ${orderTypeLabel} fue confirmado correctamente.`,
+    message: `El pedido ${confirmedOrder.number} de ${orderTypeLabel} fue confirmado correctamente.`,
   });
 
   setCartItems([]);
