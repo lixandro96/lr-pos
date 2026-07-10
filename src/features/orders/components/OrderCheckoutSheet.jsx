@@ -1,6 +1,7 @@
 import BottomSheet from "../../../components/ui/BottomSheet";
 import Button from "../../../components/ui/Button";
 import Select from "../../../components/ui/Select";
+
 import DeliveryDetailsForm from "./DeliveryDetailsForm";
 
 const currencyFormatter = new Intl.NumberFormat("es-DO", {
@@ -19,45 +20,85 @@ const orderTypeOptions = [
   },
 ];
 
+const paymentMethodOptionsByOrderType = {
+  MOSTRADOR: [
+    {
+      value: "CASH",
+      label: "Efectivo",
+    },
+    {
+      value: "CARD",
+      label: "Tarjeta",
+    },
+    {
+      value: "TRANSFER",
+      label: "Transferencia",
+    },
+    {
+      value: "PENDING_PAYMENT",
+      label: "Pendiente de cobro",
+    },
+  ],
+  DELIVERY: [
+    {
+      value: "CASH",
+      label: "Efectivo",
+    },
+    {
+      value: "TRANSFER",
+      label: "Transferencia",
+    },
+    {
+      value: "PENDING_PAYMENT",
+      label: "Pendiente de cobro",
+    },
+  ],
+};
+
 function OrderCheckoutSheet({
-    isOpen,
-    onClose,
-    orderType,
-    onOrderTypeChange,
-    clients,
-    clientId,
-    deliveryAddress,
-    onClientChange,
-    onDeliveryAddressChange,
-    totalQuantity,
-    total,
-    onContinue,
+  isOpen,
+  onClose,
+  orderType,
+  onOrderTypeChange,
+  clients = [],
+  clientId = "",
+  deliveryAddress = "",
+  onClientChange,
+  onDeliveryAddressChange,
+  paymentMethod = "",
+  onPaymentMethodChange,
+  totalQuantity,
+  total,
+  onContinue,
 }) {
+  const paymentMethodOptions =
+    paymentMethodOptionsByOrderType[orderType] ?? [];
 
+  const hasOrderType = Boolean(orderType);
+  const hasPaymentMethod = Boolean(paymentMethod);
 
-  const isDeliveryComplete =
-  orderType === "DELIVERY" &&
-  Boolean(clientId) &&
-  deliveryAddress.trim() !== "";
+  const hasDeliveryDetails =
+    orderType !== "DELIVERY" ||
+    (Boolean(clientId) &&
+      deliveryAddress.trim() !== "");
 
   const canContinue =
-    orderType === "MOSTRADOR" ||
-    isDeliveryComplete;
-
+    hasOrderType &&
+    hasDeliveryDetails &&
+    hasPaymentMethod;
 
   return (
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
       title="Confirmar pedido"
-
       footer={
         <Button
           className="w-full"
           disabled={!canContinue}
           onClick={onContinue}
         >
-          Continuar
+          Confirmar Pedido
         </Button>
       }
     >
@@ -108,6 +149,7 @@ function OrderCheckoutSheet({
             </p>
           </div>
         )}
+
         {orderType === "DELIVERY" && (
           <DeliveryDetailsForm
             clients={clients}
@@ -118,6 +160,38 @@ function OrderCheckoutSheet({
               onDeliveryAddressChange
             }
           />
+        )}
+
+        {hasOrderType && (
+          <Select
+            id="payment-method"
+            label="Método de pago"
+            placeholder="Selecciona el método de pago"
+            options={paymentMethodOptions}
+            value={paymentMethod}
+            onChange={(event) =>
+              onPaymentMethodChange(event.target.value)
+            }
+            helperText="Si seleccionas pendiente de cobro, el pedido quedará registrado para cobrar después."
+          />
+        )}
+
+        {paymentMethod === "PENDING_PAYMENT" && (
+          <div
+            className="
+              rounded-xl border border-amber-200
+              bg-amber-50 p-4
+            "
+          >
+            <p className="text-sm font-medium text-amber-900">
+              Este pedido quedará pendiente de cobro.
+            </p>
+
+            <p className="mt-1 text-sm text-amber-800">
+              Más adelante aparecerá en el módulo de Cobros para
+              marcarlo como pagado.
+            </p>
+          </div>
         )}
       </div>
     </BottomSheet>

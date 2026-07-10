@@ -191,6 +191,11 @@ function OrdersPage() {
     0,
   );
 
+  const paymentStatus =
+    checkoutData.paymentMethod === "PENDING_PAYMENT"
+      ? "PENDIENTE"
+      : "PAGADO";
+
   const orderDraft = {
     items: cartItems.map((item) => ({
       productId: item.productId,
@@ -206,9 +211,9 @@ function OrdersPage() {
     total: cartTotal,
     orderType: checkoutData.orderType,
     clientId: checkoutData.clientId,
-    deliveryAddress:
-      checkoutData.deliveryAddress,
+    deliveryAddress: checkoutData.deliveryAddress,
     paymentMethod: checkoutData.paymentMethod,
+    paymentStatus,
   };
 
   function handleClearCatalogFilters() {
@@ -371,6 +376,7 @@ function OrdersPage() {
     setCheckoutData((currentData) => ({
       ...currentData,
       orderType,
+      paymentMethod: "",
 
       clientId:
         orderType === "DELIVERY"
@@ -408,45 +414,58 @@ function OrdersPage() {
     }));
   }
 
+  function handlePaymentMethodChange(paymentMethod) {
+    setCheckoutData((currentData) => ({
+      ...currentData,
+      paymentMethod,
+    }));
+  }
+
   function handleContinueCheckout() {
-    if (!checkoutData.orderType) {
-      return;
-    }
+  if (!checkoutData.orderType) {
+    return;
+  }
 
-    const isDeliveryIncomplete =
-      checkoutData.orderType ===
-        "DELIVERY" &&
-      (
-        !checkoutData.clientId ||
-        !checkoutData.deliveryAddress.trim()
-      );
-
-    if (isDeliveryIncomplete) {
-      return;
-    }
-
-    console.log(
-      "Borrador del pedido:",
-      orderDraft,
+  const isDeliveryIncomplete =
+    checkoutData.orderType === "DELIVERY" &&
+    (
+      !checkoutData.clientId ||
+      !checkoutData.deliveryAddress.trim()
     );
 
-    const orderTypeLabel =
-      checkoutData.orderType ===
-      "DELIVERY"
-        ? "Delivery"
-        : "Mostrador";
-
-    setToast({
-      isOpen: true,
-      title:
-        "Datos del pedido preparados",
-      message:
-        `El pedido continuará como ` +
-        `${orderTypeLabel}.`,
-    });
-
-    setIsCheckoutOpen(false);
+  if (isDeliveryIncomplete) {
+    return;
   }
+
+  if (!checkoutData.paymentMethod) {
+    return;
+  }
+
+  console.log("Pedido confirmado:", orderDraft);
+
+  const orderTypeLabel =
+    checkoutData.orderType === "DELIVERY"
+      ? "Delivery"
+      : "Mostrador";
+
+  setToast({
+    isOpen: true,
+    title: "Pedido enviado a cocina",
+    message: `El pedido de ${orderTypeLabel} fue confirmado correctamente.`,
+  });
+
+  setCartItems([]);
+  setIsCartOpen(false);
+  setIsCheckoutOpen(false);
+  setSelectedProduct(null);
+
+  setCheckoutData({
+    orderType: "",
+    clientId: null,
+    deliveryAddress: "",
+    paymentMethod: "",
+  });
+}
 
   function handleCloseToast() {
     setToast((currentToast) => ({
@@ -689,6 +708,8 @@ function OrdersPage() {
         onDeliveryAddressChange={
           handleDeliveryAddressChange
         }
+        paymentMethod={checkoutData.paymentMethod}
+        onPaymentMethodChange={handlePaymentMethodChange}
         totalQuantity={cartQuantity}
         total={cartTotal}
         onContinue={
