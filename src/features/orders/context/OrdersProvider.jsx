@@ -80,12 +80,28 @@ function OrdersProvider({ children }) {
     return createdOrder;
   }, []);
 
+  const updateOrderStatus = useCallback((orderId, status) => {
+  setOrders((currentOrders) =>
+    currentOrders.map((order) => {
+      if (order.id !== orderId) {
+        return order;
+      }
+
+      return {
+        ...order,
+        status,
+      };
+    }),
+  );
+}, []);
+
   const value = useMemo(
     () => ({
-      orders,
-      createOrder,
+        orders,
+        createOrder,
+        updateOrderStatus,
     }),
-    [orders, createOrder],
+    [orders, createOrder, updateOrderStatus],
   );
 
   return (
