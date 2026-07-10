@@ -81,27 +81,44 @@ function OrdersProvider({ children }) {
   }, []);
 
   const updateOrderStatus = useCallback((orderId, status) => {
-  setOrders((currentOrders) =>
-    currentOrders.map((order) => {
-      if (order.id !== orderId) {
-        return order;
-      }
+    setOrders((currentOrders) =>
+        currentOrders.map((order) => {
+        if (order.id !== orderId) {
+            return order;
+        }
 
-      return {
-        ...order,
-        status,
-      };
-    }),
-  );
-}, []);
+        return {
+            ...order,
+            status,
+        };
+        }),
+    );
+  }, []);
+
+  const updateOrderPayment = useCallback((orderId, paymentData) => {
+    setOrders((currentOrders) =>
+        currentOrders.map((order) => {
+        if (order.id !== orderId) {
+            return order;
+        }
+
+        return {
+            ...order,
+            ...paymentData,
+        };
+        }),
+    );
+  }, []);
+
 
   const value = useMemo(
     () => ({
         orders,
         createOrder,
         updateOrderStatus,
+         updateOrderPayment
     }),
-    [orders, createOrder, updateOrderStatus],
+    [orders, createOrder, updateOrderStatus, updateOrderPayment],
   );
 
   return (
