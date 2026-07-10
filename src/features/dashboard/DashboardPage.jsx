@@ -1,6 +1,6 @@
 import PageHeader from "../../components/layout/PageHeader";
-import { mockOrders } from "../../mocks";
 
+import { useOrders } from "../orders/context/useOrders";
 
 import RecentOrders from "./components/RecentOrders";
 import StatCard from "./components/StatCard";
@@ -34,24 +34,23 @@ function calculateDashboardStats(orders) {
     (order) => order.status === "LISTO",
   ).length;
 
-  const pendingPayments = orders
-    .filter(
-      (order) =>
-        order.type === "DELIVERY" &&
-        order.status === "DESPACHADO" &&
-        order.paymentStatus === "PENDIENTE",
-    )
-    .reduce(
-      (total, order) => total + order.total,
-      0,
-    );
+  const pendingPaymentsOrders = orders.filter(
+    (order) =>
+      order.status === "DESPACHADO" &&
+      order.paymentStatus === "PENDIENTE",
+  );
+
+  const pendingPayments = pendingPaymentsOrders.reduce(
+    (total, order) => total + order.total,
+    0,
+  );
 
   return [
     {
       id: "sales",
-      title: "Ventas de hoy",
+      title: "Ventas cobradas",
       value: currencyFormatter.format(totalSales),
-      description: "Total cobrado durante el día",
+      description: `${paidOrders.length} pedidos pagados`,
       tone: "brown",
     },
     {
@@ -79,16 +78,18 @@ function calculateDashboardStats(orders) {
       id: "payments",
       title: "Cobros pendientes",
       value: currencyFormatter.format(pendingPayments),
-      description: "Delivery entregado sin cobrar",
+      description: `${pendingPaymentsOrders.length} pedidos sin cobrar`,
       tone: "red",
     },
   ];
 }
 
 function DashboardPage() {
-  const dashboardStats = calculateDashboardStats(mockOrders);
+  const { orders } = useOrders();
 
-  const recentOrders = [...mockOrders]
+  const dashboardStats = calculateDashboardStats(orders);
+
+  const recentOrders = [...orders]
     .sort(
       (firstOrder, secondOrder) =>
         new Date(secondOrder.createdAt) -
