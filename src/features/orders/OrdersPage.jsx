@@ -9,7 +9,6 @@ import Toast from "../../components/ui/Toast";
 import {
   mockCategories,
   mockClients,
-  mockProducts,
 } from "../../mocks";
 
 import OrderCart from "./components/OrderCart";
@@ -18,6 +17,7 @@ import ProductCard from "./components/ProductCard";
 import ProductCatalogFilters from "./components/ProductCatalogFilters";
 import ProductOptionsSheet from "./components/ProductOptionsSheet";
 import { useOrders } from "./context/useOrders";
+import { useProducts } from "../products/context/useProducts";
 
 function normalizeText(value) {
   return String(value ?? "")
@@ -46,6 +46,7 @@ const currencyFormatter = new Intl.NumberFormat("es-DO", {
 
 function OrdersPage() {
 
+  const { products } = useProducts();
   const { createOrder } = useOrders();
   const [selectedProduct, setSelectedProduct] =
     useState(null);
@@ -115,7 +116,7 @@ function OrdersPage() {
   const normalizedSearchTerm =
     normalizeText(searchTerm);
 
-  const filteredProducts = [...mockProducts]
+  const filteredProducts = [...products]
     .filter((product) => product.isActive)
     .filter((product) => {
       if (selectedCategoryId === "ALL") {
