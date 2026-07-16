@@ -68,24 +68,41 @@ function ProductsPage() {
     message: "",
   });
 
-  const activeCategories = [...categories]
-    .filter((category) => category.isActive)
-    .sort(
-      (firstCategory, secondCategory) =>
-        firstCategory.sortOrder -
-        secondCategory.sortOrder,
+  const sortedCategories = [...categories].sort(
+  (firstCategory, secondCategory) => {
+    const sortDifference =
+      (firstCategory.sortOrder ??
+        Number.MAX_SAFE_INTEGER) -
+      (secondCategory.sortOrder ??
+        Number.MAX_SAFE_INTEGER);
+
+    if (sortDifference !== 0) {
+      return sortDifference;
+    }
+
+    return firstCategory.name.localeCompare(
+      secondCategory.name,
+      "es",
     );
+  },
+);
+
+const activeCategories = sortedCategories.filter(
+  (category) => category.isActive,
+);
 
   const categoryOptions = [
-    {
-      value: "ALL",
-      label: "Todas las categorías",
-    },
-    ...activeCategories.map((category) => ({
-      value: category.id,
-      label: category.name,
-    })),
-  ];
+  {
+    value: "ALL",
+    label: "Todas las categorías",
+  },
+  ...sortedCategories.map((category) => ({
+    value: category.id,
+    label: category.isActive
+      ? category.name
+      : `${category.name} (inactiva)`,
+  })),
+];
 
   const normalizedSearchTerm =
     normalizeText(searchTerm);
@@ -155,11 +172,11 @@ function ProductsPage() {
   );
 
   const selectedProductCategoryName = selectedProduct
-    ? getCategoryName(
-        selectedProduct.categoryId,
-        activeCategories,
-      )
-    : "";
+  ? getCategoryName(
+      selectedProduct.categoryId,
+      sortedCategories,
+    )
+  : "";
 
   const editingProduct = products.find(
     (product) => product.id === editingProductId,
@@ -420,7 +437,7 @@ function ProductsPage() {
               product={product}
               categoryName={getCategoryName(
                 product.categoryId,
-                activeCategories,
+                sortedCategories,
               )}
               onClick={setSelectedProductId}
             />

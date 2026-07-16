@@ -95,6 +95,11 @@ function OrdersPage() {
       );
     });
 
+    const activeCategoryIds = new Set(
+    activeCategories.map((category) => category.id),
+    );
+
+
   const activeClients = [...mockClients]
     .filter((client) => client.isActive)
     .sort((firstClient, secondClient) =>
@@ -115,7 +120,8 @@ function OrdersPage() {
     normalizeText(searchTerm);
 
   const filteredProducts = [...products]
-    .filter((product) => product.isActive)
+    .filter((product) => product.isActive &&
+      activeCategoryIds.has(product.categoryId),)
     .filter((product) => {
       if (selectedCategoryId === "ALL") {
         return true;
