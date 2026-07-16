@@ -11,6 +11,10 @@ import ProductAdminCard from "./components/ProductAdminCard";
 import ProductDetailsSheet from "./components/ProductDetailsSheet";
 import { useProducts } from "./context/useProducts";
 import ProductDeactivateConfirmSheet from "./components/ProductDeactivateConfirmSheet";
+import Button from "../../components/ui/Button";
+import Toast from "../../components/ui/Toast";
+
+import ProductFormSheet from "./components/ProductFormSheet";
 
 function normalizeText(value) {
   return String(value ?? "")
@@ -30,11 +34,22 @@ function getCategoryName(categoryId, categories) {
 }
 
 function ProductsPage() {
+
   const {
     products,
+    createProduct,
     toggleProductStatus,
   } = useProducts();
 
+  const [isCreateProductOpen, setIsCreateProductOpen] =
+  useState(false);
+
+  const [toast, setToast] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+  });
+   
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] =
     useState("ALL");
@@ -166,12 +181,64 @@ function ProductsPage() {
     setProductPendingDeactivation(null);
   }
 
+  function handleOpenCreateProduct() {
+    setIsCreateProductOpen(true);
+  }
+
+  function handleCloseCreateProduct() {
+    setIsCreateProductOpen(false);
+  }
+
+  function handleCreateProduct(productData) {
+    const createdProduct = createProduct(productData);
+
+    setIsCreateProductOpen(false);
+    setSelectedProductId(createdProduct.id);
+
+    setToast({
+      isOpen: true,
+      title: "Producto creado",
+      message: `${createdProduct.name} fue agregado al catálogo.`,
+    });
+  }
+
+  function handleCloseToast() {
+    setToast((currentToast) => ({
+      ...currentToast,
+      isOpen: false,
+    }));
+  }
+
   return (
     <section className="space-y-6 p-4 md:p-6">
       <PageHeader
         title="Productos"
         description="Administra el catálogo de productos."
       />
+
+      <div
+        className="
+          flex flex-col gap-3
+          rounded-2xl border border-gray-200
+          bg-white p-4 shadow-sm
+          sm:flex-row sm:items-center
+          sm:justify-between
+        "
+      >
+      <div>
+        <h2 className="font-bold text-gray-900">
+          Catálogo administrativo
+        </h2>
+
+        <p className="mt-1 text-sm text-gray-500">
+          Crea productos, revisa detalles y administra su disponibilidad.
+        </p>
+      </div>
+
+      <Button onClick={handleOpenCreateProduct}>
+        Nuevo producto
+      </Button>
+    </div>
 
       <div
         className="
@@ -301,6 +368,23 @@ function ProductsPage() {
         onClose={handleCancelProductDeactivation}
         onConfirm={handleConfirmProductDeactivation}
       />
+
+      {isCreateProductOpen && (
+      <ProductFormSheet
+        isOpen={isCreateProductOpen}
+        onClose={handleCloseCreateProduct}
+        categories={activeCategories}
+        onSubmit={handleCreateProduct}
+      />
+    )}
+
+    <Toast
+      isOpen={toast.isOpen}
+      type="success"
+      title={toast.title}
+      message={toast.message}
+      onClose={handleCloseToast}
+    />
     </section>
   );
 }
