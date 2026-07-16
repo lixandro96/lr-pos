@@ -1,20 +1,19 @@
 import { useState } from "react";
 
 import PageHeader from "../../components/layout/PageHeader";
+import Button from "../../components/ui/Button";
 import EmptyState from "../../components/ui/EmptyState";
 import SearchInput from "../../components/ui/SearchInput";
 import Select from "../../components/ui/Select";
+import Toast from "../../components/ui/Toast";
 
 import { mockCategories } from "../../mocks";
 
 import ProductAdminCard from "./components/ProductAdminCard";
-import ProductDetailsSheet from "./components/ProductDetailsSheet";
-import { useProducts } from "./context/useProducts";
 import ProductDeactivateConfirmSheet from "./components/ProductDeactivateConfirmSheet";
-import Button from "../../components/ui/Button";
-import Toast from "../../components/ui/Toast";
-
+import ProductDetailsSheet from "./components/ProductDetailsSheet";
 import ProductFormSheet from "./components/ProductFormSheet";
+import { useProducts } from "./context/useProducts";
 
 function normalizeText(value) {
   return String(value ?? "")
@@ -34,31 +33,37 @@ function getCategoryName(categoryId, categories) {
 }
 
 function ProductsPage() {
-
   const {
     products,
     createProduct,
+    updateProduct,
     toggleProductStatus,
   } = useProducts();
 
-  const [isCreateProductOpen, setIsCreateProductOpen] =
-  useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const [selectedCategoryId, setSelectedCategoryId] =
+    useState("ALL");
+
+  const [selectedProductId, setSelectedProductId] =
+    useState(null);
+
+  const [
+    productPendingDeactivation,
+    setProductPendingDeactivation,
+  ] = useState(null);
+
+  const [productFormMode, setProductFormMode] =
+    useState(null);
+
+  const [editingProductId, setEditingProductId] =
+    useState(null);
 
   const [toast, setToast] = useState({
     isOpen: false,
     title: "",
     message: "",
   });
-   
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] =
-    useState("ALL");
-  const [selectedProductId, setSelectedProductId] =
-    useState(null);
-    const [
-  productPendingDeactivation,
-  setProductPendingDeactivation,
-] = useState(null);
 
   const activeCategories = [...mockCategories]
     .filter((category) => category.isActive)
@@ -126,11 +131,19 @@ function ProductsPage() {
         return categoryDifference;
       }
 
-      return (
+      const productOrderDifference =
         (firstProduct.sortOrder ??
           Number.MAX_SAFE_INTEGER) -
         (secondProduct.sortOrder ??
-          Number.MAX_SAFE_INTEGER)
+          Number.MAX_SAFE_INTEGER);
+
+      if (productOrderDifference !== 0) {
+        return productOrderDifference;
+      }
+
+      return firstProduct.name.localeCompare(
+        secondProduct.name,
+        "es",
       );
     });
 
@@ -145,6 +158,12 @@ function ProductsPage() {
       )
     : "";
 
+  const editingProduct = products.find(
+    (product) => product.id === editingProductId,
+  );
+
+  const isProductFormOpen = productFormMode !== null;
+
   const totalProducts = products.length;
 
   const activeProducts = products.filter(
@@ -154,10 +173,68 @@ function ProductsPage() {
   const inactiveProducts =
     totalProducts - activeProducts;
 
+  function handleOpenCreateProduct() {
+    setProductFormMode("create");
+    setEditingProductId(null);
+    setSelectedProductId(null);
+    setProductPendingDeactivation(null);
+  }
+
+  function handleOpenEditProduct(product) {
+    setProductFormMode("edit");
+    setEditingProductId(product.id);
+    setSelectedProductId(null);
+    setProductPendingDeactivation(null);
+  }
+
+  function handleCloseProductForm() {
+    setProductFormMode(null);
+    setEditingProductId(null);
+  }
+
+  function handleSubmitProductForm(productData) {
+    if (productFormMode === "edit") {
+      handleUpdateProduct(productData);
+      return;
+    }
+
+    handleCreateProduct(productData);
+  }
+
+  function handleCreateProduct(productData) {
+    const createdProduct = createProduct(productData);
+
+    handleCloseProductForm();
+    setSelectedProductId(createdProduct.id);
+
+    setToast({
+      isOpen: true,
+      title: "Producto creado",
+      message: `${createdProduct.name} fue agregado al catálogo.`,
+    });
+  }
+
+  function handleUpdateProduct(productData) {
+    if (!editingProduct) {
+      return;
+    }
+
+    updateProduct(editingProduct.id, productData);
+
+    handleCloseProductForm();
+    setSelectedProductId(editingProduct.id);
+
+    setToast({
+      isOpen: true,
+      title: "Producto actualizado",
+      message: `${productData.name} fue actualizado correctamente.`,
+    });
+  }
+
   function handleCloseDetails() {
-  setSelectedProductId(null);
-  setProductPendingDeactivation(null);
-}
+    setSelectedProductId(null);
+    setProductPendingDeactivation(null);
+  }
 
   function handleRequestToggleProductStatus(product) {
     if (!product) {
@@ -170,6 +247,12 @@ function ProductsPage() {
     }
 
     toggleProductStatus(product.id);
+
+    setToast({
+      isOpen: true,
+      title: "Producto activado",
+      message: `${product.name} vuelve a estar disponible.`,
+    });
   }
 
   function handleCancelProductDeactivation() {
@@ -177,28 +260,20 @@ function ProductsPage() {
   }
 
   function handleConfirmProductDeactivation(productId) {
+    const product = products.find(
+      (currentProduct) =>
+        currentProduct.id === productId,
+    );
+
     toggleProductStatus(productId);
     setProductPendingDeactivation(null);
-  }
-
-  function handleOpenCreateProduct() {
-    setIsCreateProductOpen(true);
-  }
-
-  function handleCloseCreateProduct() {
-    setIsCreateProductOpen(false);
-  }
-
-  function handleCreateProduct(productData) {
-    const createdProduct = createProduct(productData);
-
-    setIsCreateProductOpen(false);
-    setSelectedProductId(createdProduct.id);
 
     setToast({
       isOpen: true,
-      title: "Producto creado",
-      message: `${createdProduct.name} fue agregado al catálogo.`,
+      title: "Producto desactivado",
+      message: `${
+        product?.name ?? "El producto"
+      } ya no aparecerá en pedidos.`,
     });
   }
 
@@ -225,20 +300,21 @@ function ProductsPage() {
           sm:justify-between
         "
       >
-      <div>
-        <h2 className="font-bold text-gray-900">
-          Catálogo administrativo
-        </h2>
+        <div>
+          <h2 className="font-bold text-gray-900">
+            Catálogo administrativo
+          </h2>
 
-        <p className="mt-1 text-sm text-gray-500">
-          Crea productos, revisa detalles y administra su disponibilidad.
-        </p>
+          <p className="mt-1 text-sm text-gray-500">
+            Crea productos, revisa detalles y administra su
+            disponibilidad.
+          </p>
+        </div>
+
+        <Button onClick={handleOpenCreateProduct}>
+          Nuevo producto
+        </Button>
       </div>
-
-      <Button onClick={handleOpenCreateProduct}>
-        Nuevo producto
-      </Button>
-    </div>
 
       <div
         className="
@@ -359,7 +435,10 @@ function ProductsPage() {
         onClose={handleCloseDetails}
         product={selectedProduct}
         categoryName={selectedProductCategoryName}
-        onToggleStatus={handleRequestToggleProductStatus}
+        onToggleStatus={
+          handleRequestToggleProductStatus
+        }
+        onEdit={handleOpenEditProduct}
       />
 
       <ProductDeactivateConfirmSheet
@@ -369,22 +448,31 @@ function ProductsPage() {
         onConfirm={handleConfirmProductDeactivation}
       />
 
-      {isCreateProductOpen && (
-      <ProductFormSheet
-        isOpen={isCreateProductOpen}
-        onClose={handleCloseCreateProduct}
-        categories={activeCategories}
-        onSubmit={handleCreateProduct}
-      />
-    )}
+      {isProductFormOpen &&
+        (productFormMode === "create" ||
+          editingProduct) && (
+          <ProductFormSheet
+            key={
+              productFormMode === "edit"
+                ? `edit-${editingProductId}`
+                : "create"
+            }
+            isOpen={isProductFormOpen}
+            onClose={handleCloseProductForm}
+            categories={activeCategories}
+            onSubmit={handleSubmitProductForm}
+            product={editingProduct}
+            mode={productFormMode}
+          />
+        )}
 
-    <Toast
-      isOpen={toast.isOpen}
-      type="success"
-      title={toast.title}
-      message={toast.message}
-      onClose={handleCloseToast}
-    />
+      <Toast
+        isOpen={toast.isOpen}
+        type="success"
+        title={toast.title}
+        message={toast.message}
+        onClose={handleCloseToast}
+      />
     </section>
   );
 }

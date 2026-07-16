@@ -31,16 +31,27 @@ function createVariantId(productId, variantName) {
 }
 
 function normalizeVariants(productId, variants = []) {
-  return variants.map((variant, index) => ({
+  const normalizedVariants = variants.map((variant) => ({
     id:
       variant.id ??
       createVariantId(productId, variant.name),
     name: String(variant.name ?? "").trim(),
     price: Number(variant.price ?? 0),
-    isDefault:
-      Boolean(variant.isDefault) ||
-      index === 0,
+    isDefault: Boolean(variant.isDefault),
     isActive: variant.isActive ?? true,
+  }));
+
+  const defaultVariantIndex =
+    normalizedVariants.findIndex(
+      (variant) => variant.isDefault,
+    );
+
+  return normalizedVariants.map((variant, index) => ({
+    ...variant,
+    isDefault:
+      defaultVariantIndex >= 0
+        ? index === defaultVariantIndex
+        : index === 0,
   }));
 }
 

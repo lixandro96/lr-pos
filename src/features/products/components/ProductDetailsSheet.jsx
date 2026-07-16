@@ -12,6 +12,7 @@ function ProductDetailsSheet({
   product,
   categoryName,
   onToggleStatus,
+  onEdit,
 }) {
   if (!product) {
     return null;
@@ -31,7 +32,7 @@ function ProductDetailsSheet({
       onClose={onClose}
       title="Detalle del producto"
       footer={
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <Button
             variant="secondary"
             onClick={onClose}
@@ -40,11 +41,18 @@ function ProductDetailsSheet({
           </Button>
 
           <Button
+            variant="secondary"
+            onClick={() => onEdit(product)}
+          >
+            Editar
+          </Button>
+
+          <Button
             onClick={() => onToggleStatus(product)}
           >
             {product.isActive
-                ? "Desactivar"
-                : "Activar"}
+              ? "Desactivar"
+              : "Activar"}
           </Button>
         </div>
       }

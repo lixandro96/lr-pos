@@ -18,16 +18,76 @@ function createLocalVariantId() {
 }
 
 function createEmptyVariant({
+  id,
   name = "",
   price = "",
   isDefault = false,
+  isActive = true,
 } = {}) {
   return {
     localId: createLocalVariantId(),
+    id,
     name,
     price,
     isDefault,
-    isActive: true,
+    isActive,
+  };
+}
+
+function ensureDefaultVariant(variants) {
+  if (variants.some((variant) => variant.isDefault)) {
+    return variants;
+  }
+
+  return variants.map((variant, index) => ({
+    ...variant,
+    isDefault: index === 0,
+  }));
+}
+
+function createInitialFormData(product) {
+  if (!product) {
+    return {
+      name: "",
+      categoryId: "",
+      description: "",
+      isActive: true,
+      variants: [
+        createEmptyVariant({
+          name: "Regular",
+          price: "",
+          isDefault: true,
+        }),
+      ],
+    };
+  }
+
+  const variants =
+    product.variants?.length > 0
+      ? product.variants.map((variant) =>
+          createEmptyVariant({
+            id: variant.id,
+            name: variant.name,
+            price: String(variant.price ?? ""),
+            isDefault: variant.isDefault,
+            isActive: variant.isActive ?? true,
+          }),
+        )
+      : [
+          createEmptyVariant({
+            name: "Regular",
+            price: String(product.basePrice ?? ""),
+            isDefault: true,
+            isActive: true,
+          }),
+        ];
+
+  return {
+    name: product.name ?? "",
+    categoryId: product.categoryId ?? "",
+    description: product.description ?? "",
+    isActive: product.isActive ?? true,
+    variants: ensureDefaultVariant(variants),
   };
 }
 
@@ -36,20 +96,14 @@ function ProductFormSheet({
   onClose,
   categories = [],
   onSubmit,
+  product = null,
+  mode = "create",
 }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    categoryId: "",
-    description: "",
-    isActive: true,
-    variants: [
-      createEmptyVariant({
-        name: "Regular",
-        price: "",
-        isDefault: true,
-      }),
-    ],
-  });
+  const [formData, setFormData] = useState(() =>
+    createInitialFormData(product),
+  );
+
+  const isEditMode = mode === "edit";
 
   const categoryOptions = categories.map((category) => ({
     value: category.id,
@@ -72,14 +126,18 @@ function ProductFormSheet({
       );
     });
 
-  const hasDefaultVariant = formData.variants.some(
+  const defaultVariant = formData.variants.find(
     (variant) => variant.isDefault,
   );
+
+  const hasValidDefaultVariant =
+    Boolean(defaultVariant) &&
+    defaultVariant.isActive;
 
   const canSubmit =
     hasValidProductInfo &&
     hasValidVariants &&
-    hasDefaultVariant;
+    hasValidDefaultVariant;
 
   function updateField(field, value) {
     setFormData((currentData) => ({
@@ -142,6 +200,10 @@ function ProductFormSheet({
           ? remainingVariants.map((variant, index) => ({
               ...variant,
               isDefault: index === 0,
+              isActive:
+                index === 0
+                  ? true
+                  : variant.isActive,
             }))
           : remainingVariants,
       };
@@ -154,6 +216,10 @@ function ProductFormSheet({
       variants: currentData.variants.map((variant) => ({
         ...variant,
         isDefault: variant.localId === localId,
+        isActive:
+          variant.localId === localId
+            ? true
+            : variant.isActive,
       })),
     }));
   }
@@ -165,6 +231,7 @@ function ProductFormSheet({
 
     const normalizedVariants = formData.variants.map(
       (variant) => ({
+        id: variant.id,
         name: variant.name.trim(),
         price: Number(variant.price),
         isDefault: variant.isDefault,
@@ -172,7 +239,7 @@ function ProductFormSheet({
       }),
     );
 
-    const defaultVariant =
+    const selectedDefaultVariant =
       normalizedVariants.find(
         (variant) => variant.isDefault,
       ) ?? normalizedVariants[0];
@@ -181,8 +248,8 @@ function ProductFormSheet({
       name: formData.name.trim(),
       categoryId: formData.categoryId,
       description: formData.description.trim(),
-      basePrice: defaultVariant.price,
-      imageUrl: null,
+      basePrice: selectedDefaultVariant.price,
+      imageUrl: product?.imageUrl ?? null,
       isActive: formData.isActive,
       variants: normalizedVariants,
     });
@@ -192,7 +259,11 @@ function ProductFormSheet({
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title="Nuevo producto"
+      title={
+        isEditMode
+          ? "Editar producto"
+          : "Nuevo producto"
+      }
       footer={
         <div className="grid gap-3 sm:grid-cols-2">
           <Button
@@ -206,7 +277,9 @@ function ProductFormSheet({
             disabled={!canSubmit}
             onClick={handleSubmit}
           >
-            Crear producto
+            {isEditMode
+              ? "Guardar cambios"
+              : "Crear producto"}
           </Button>
         </div>
       }
@@ -283,8 +356,8 @@ function ProductFormSheet({
               </h3>
 
               <p className="mt-1 text-sm text-gray-500">
-                Agrega los tamaños, presentaciones o precios
-                disponibles para este producto.
+                Administra los tamaños, presentaciones o precios
+                disponibles.
               </p>
             </div>
 
@@ -345,21 +418,41 @@ function ProductFormSheet({
                     sm:justify-between
                   "
                 >
-                  <label className="flex items-center gap-2 text-sm text-gray-700">
-                    <input
-                      type="radio"
-                      name="default-product-variant"
-                      checked={variant.isDefault}
-                      onChange={() =>
-                        handleSetDefaultVariant(
-                          variant.localId,
-                        )
-                      }
-                      className="h-4 w-4 border-gray-300"
-                    />
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="radio"
+                        name="default-product-variant"
+                        checked={variant.isDefault}
+                        onChange={() =>
+                          handleSetDefaultVariant(
+                            variant.localId,
+                          )
+                        }
+                        className="h-4 w-4 border-gray-300"
+                      />
 
-                    Variante principal
-                  </label>
+                      Variante principal
+                    </label>
+
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={variant.isActive}
+                        disabled={variant.isDefault}
+                        onChange={(event) =>
+                          updateVariant(
+                            variant.localId,
+                            "isActive",
+                            event.target.checked,
+                          )
+                        }
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+
+                      Variante activa
+                    </label>
+                  </div>
 
                   <button
                     type="button"
@@ -389,6 +482,12 @@ function ProductFormSheet({
             <p className="text-sm text-amber-700">
               Cada variante debe tener nombre y precio mayor a
               cero.
+            </p>
+          )}
+
+          {!hasValidDefaultVariant && (
+            <p className="text-sm text-amber-700">
+              Debe existir una variante principal activa.
             </p>
           )}
         </section>
