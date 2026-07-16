@@ -7,7 +7,7 @@ import SearchInput from "../../components/ui/SearchInput";
 import Select from "../../components/ui/Select";
 import Toast from "../../components/ui/Toast";
 
-import { mockCategories } from "../../mocks";
+import { useCategories } from "../categories/context/useCategories";
 
 import ProductAdminCard from "./components/ProductAdminCard";
 import ProductDeactivateConfirmSheet from "./components/ProductDeactivateConfirmSheet";
@@ -33,12 +33,15 @@ function getCategoryName(categoryId, categories) {
 }
 
 function ProductsPage() {
+
   const {
     products,
     createProduct,
     updateProduct,
     toggleProductStatus,
   } = useProducts();
+
+  const { categories } = useCategories();
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -65,7 +68,7 @@ function ProductsPage() {
     message: "",
   });
 
-  const activeCategories = [...mockCategories]
+  const activeCategories = [...categories]
     .filter((category) => category.isActive)
     .sort(
       (firstCategory, secondCategory) =>

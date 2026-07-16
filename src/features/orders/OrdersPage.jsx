@@ -6,11 +6,8 @@ import Button from "../../components/ui/Button";
 import EmptyState from "../../components/ui/EmptyState";
 import Toast from "../../components/ui/Toast";
 
-import {
-  mockCategories,
-  mockClients,
-} from "../../mocks";
-
+import {mockClients,} from "../../mocks";
+import { useCategories } from "../categories/context/useCategories";
 import OrderCart from "./components/OrderCart";
 import OrderCheckoutSheet from "./components/OrderCheckoutSheet";
 import ProductCard from "./components/ProductCard";
@@ -46,6 +43,7 @@ const currencyFormatter = new Intl.NumberFormat("es-DO", {
 
 function OrdersPage() {
 
+  const { categories } = useCategories();
   const { products } = useProducts();
   const { createOrder } = useOrders();
   const [selectedProduct, setSelectedProduct] =
@@ -80,7 +78,7 @@ function OrdersPage() {
     message: "",
   });
 
-  const activeCategories = [...mockCategories]
+  const activeCategories = [...categories]
     .filter((category) => category.isActive)
     .sort((firstCategory, secondCategory) => {
       const sortDifference =
