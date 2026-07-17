@@ -2,7 +2,7 @@ import PageHeader from "../../components/layout/PageHeader";
 import Button from "../../components/ui/Button";
 import EmptyState from "../../components/ui/EmptyState";
 
-import { mockClients } from "../../mocks";
+import { useClients } from "../clients/context/useClients";
 import { useOrders } from "../orders/context/useOrders";
 
 const currencyFormatter = new Intl.NumberFormat("es-DO", {
@@ -43,15 +43,19 @@ function formatCreatedAt(createdAt) {
   }).format(new Date(createdAt));
 }
 
-function getClientName(clientId) {
-  const client = mockClients.find(
+function getClientName(clients = [], clientId) {
+  const client = clients.find(
     (currentClient) => currentClient.id === clientId,
   );
 
   return client?.name ?? "Cliente no especificado";
 }
 
-function DeliveryOrderCard({ order, onDispatch }) {
+function DeliveryOrderCard({
+  order,
+  clients,
+  onDispatch,
+}) {
   const paymentStatus =
     paymentStatusStyles[order.paymentStatus] ??
     paymentStatusStyles.PENDIENTE;
@@ -119,7 +123,7 @@ function DeliveryOrderCard({ order, onDispatch }) {
                 Cliente:
               </span>{" "}
               <span className="text-gray-700">
-                {getClientName(order.clientId)}
+                {getClientName(clients, order.clientId)}
               </span>
             </p>
 
@@ -128,7 +132,8 @@ function DeliveryOrderCard({ order, onDispatch }) {
                 Dirección:
               </span>{" "}
               <span className="text-gray-700">
-                {order.deliveryAddress}
+                {order.deliveryAddress ||
+                  "Sin dirección registrada"}
               </span>
             </p>
           </div>
@@ -203,6 +208,7 @@ function DeliveryOrderCard({ order, onDispatch }) {
 
 function DeliveriesPage() {
   const { orders, updateOrderStatus } = useOrders();
+  const { clients } = useClients();
 
   const readyOrders = orders
     .filter((order) => order.status === "LISTO")
@@ -240,6 +246,7 @@ function DeliveriesPage() {
             <DeliveryOrderCard
               key={order.id}
               order={order}
+              clients={clients}
               onDispatch={handleDispatchOrder}
             />
           ))}
