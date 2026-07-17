@@ -6,7 +6,7 @@ import Button from "../../components/ui/Button";
 import EmptyState from "../../components/ui/EmptyState";
 import Toast from "../../components/ui/Toast";
 
-import {mockClients,} from "../../mocks";
+import { useClients } from "../clients/context/useClients";
 import { useCategories } from "../categories/context/useCategories";
 import OrderCart from "./components/OrderCart";
 import OrderCheckoutSheet from "./components/OrderCheckoutSheet";
@@ -43,6 +43,7 @@ const currencyFormatter = new Intl.NumberFormat("es-DO", {
 
 function OrdersPage() {
 
+  const { clients } = useClients();
   const { categories } = useCategories();
   const { products } = useProducts();
   const { createOrder } = useOrders();
@@ -100,7 +101,7 @@ function OrdersPage() {
     );
 
 
-  const activeClients = [...mockClients]
+  const activeClients = [...clients]
     .filter((client) => client.isActive)
     .sort((firstClient, secondClient) =>
       firstClient.name.localeCompare(
