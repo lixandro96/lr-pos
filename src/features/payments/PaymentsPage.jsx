@@ -6,7 +6,7 @@ import EmptyState from "../../components/ui/EmptyState";
 import Select from "../../components/ui/Select";
 import Toast from "../../components/ui/Toast";
 
-import { mockClients } from "../../mocks";
+import { useClients } from "../clients/context/useClients";
 import { useOrders } from "../orders/context/useOrders";
 
 const currencyFormatter = new Intl.NumberFormat("es-DO", {
@@ -56,22 +56,23 @@ function formatCreatedAt(createdAt) {
   }).format(new Date(createdAt));
 }
 
-function getClientName(clientId) {
-  const client = mockClients.find(
+function getClientById(clients = [], clientId) {
+  return clients.find(
     (currentClient) => currentClient.id === clientId,
   );
-
-  return client?.name ?? "Cliente no especificado";
 }
 
 function PendingPaymentCard({
   order,
+  clients,
   selectedPaymentMethod = "",
   onPaymentMethodChange,
   onMarkAsPaid,
 }) {
   const paymentOptions =
     collectedPaymentOptionsByOrderType[order.type] ?? [];
+
+  const client = getClientById(clients, order.clientId);
 
   return (
     <article
@@ -122,7 +123,16 @@ function PendingPaymentCard({
                 Cliente:
               </span>{" "}
               <span className="text-gray-700">
-                {getClientName(order.clientId)}
+                {client?.name ?? "Cliente no especificado"}
+              </span>
+            </p>
+
+            <p>
+              <span className="font-semibold text-gray-900">
+                Teléfono:
+              </span>{" "}
+              <span className="text-gray-700">
+                {client?.phone ?? "Sin teléfono"}
               </span>
             </p>
 
@@ -131,7 +141,9 @@ function PendingPaymentCard({
                 Dirección:
               </span>{" "}
               <span className="text-gray-700">
-                {order.deliveryAddress}
+                {order.deliveryAddress ||
+                  client?.address ||
+                  "Sin dirección registrada"}
               </span>
             </p>
           </div>
@@ -186,6 +198,7 @@ function PendingPaymentCard({
 
 function PaymentsPage() {
   const { orders, updateOrderPayment } = useOrders();
+  const { clients } = useClients();
 
   const [selectedPaymentMethods, setSelectedPaymentMethods] =
     useState({});
@@ -286,6 +299,7 @@ function PaymentsPage() {
             <PendingPaymentCard
               key={order.id}
               order={order}
+              clients={clients}
               selectedPaymentMethod={
                 selectedPaymentMethods[order.id] ?? ""
               }
