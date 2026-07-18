@@ -13,12 +13,25 @@ import ClientsPage from "../features/clients/ClientsPage";
 import UsersPage from "../features/users/UsersPage";
 import ReportsPage from "../features/reports/ReportsPage";
 import SettingsPage from "../features/settings/SettingsPage";
+import LoginPage from "../features/session/LoginPage";
+import { useSession } from "../features/session/context/useSession";
+
+function ProtectedLayout() {
+  const { isAuthenticated } = useSession();
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  return <MainLayout />;
+}
+
 
 function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<MainLayout />}>
+        <Route element={<ProtectedLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="kitchen" element={<KitchenPage />} />
