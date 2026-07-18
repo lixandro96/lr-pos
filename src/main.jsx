@@ -6,6 +6,7 @@ import OrdersProvider from "./features/orders/context/OrdersProvider";
 import ProductsProvider from "./features/products/context/ProductsProvider";
 import CategoriesProvider from "./features/categories/context/CategoriesProvider";
 import ClientsProvider from "./features/clients/context/ClientsProvider";
+import UsersProvider from "./features/users/context/UsersProvider";
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -13,9 +14,11 @@ createRoot(document.getElementById('root')).render(
     <CategoriesProvider>
       <ProductsProvider>
         <ClientsProvider>
-          <OrdersProvider>
-            <App />
-          </OrdersProvider>
+          <UsersProvider>
+            <OrdersProvider>
+              <App />
+            </OrdersProvider>
+          </UsersProvider>
         </ClientsProvider>
       </ProductsProvider>
     </CategoriesProvider>
